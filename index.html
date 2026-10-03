@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo das Maletas do Futsal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+        h1 { color: #4CAF50; }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover { background-color: #45a049; }
+        .btn-secundario {
+            background-color: #555;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+        .btn-secundario:hover { background-color: #666; }
+        input {
+            padding: 10px;
+            margin: 8px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #2b2b2b;
+            color: white;
+            width: 70%;
+        }
+        .maletas-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .maleta {
+            width: 70px;
+            height: 70px;
+            background-color: #ff9800;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .maleta:hover { background-color: #e68a00; }
+        .escondido { display: none; }
+        .placar {
+            font-size: 20px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #ffca28;
+        }
+        .input-box {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>💼 Jogo das Maletas do Futsal ⚽</h1>
+
+    <!-- TELA 1: MENU PRINCIPAL -->
+    <div id="tela-menu">
+        <h3>Escolha o Modo de Jogo:</h3>
+        <button onclick="iniciarModo(1)">1. Modo Padrão (Banco Automático)</button><br>
+        <button onclick="iniciarModo(2)">2. Modo Rivalidade (2P)</button><br>
+        <button onclick="iniciarModo(3)">3. Modo Mestre (3P)</button>
+    </div>
+
+    <!-- TELA 2: NOMES DOS JOGADORES -->
+    <div id="tela-nomes" class="escondido">
+        <h3 id="titulo-nomes">Digite os nomes:</h3>
+        <div id="inputs-nomes"></div>
+        <button onclick="confirmarNomes()">Avançar</button>
+    </div>
+
+    <!-- TELA 3: CADASTRO DE MALETAS SECRETO -->
+    <div id="tela-cadastro" class="escondido">
+        <h3 id="instrucao-cadastro"></h3>
+        <p id="sub-cadastro"></p>
+        
+        <div class="input-box">
+            <input type="password" id="input-maleta" placeholder="Digite em segredo o jogador...">
+            <button type="button" class="btn-secundario" onclick="alternarVisibilidade()">👁️</button>
+        </div>
+        <br>
+        <button onclick="salvarMaletaCustom()">Salvar Maleta em Segredo</button>
+    </div>
+
+    <!-- TELA 4: TABULEIRO DA PARTIDA -->
+    <div id="tela-jogo" class="escondido">
+        <h2 id="posicao-atual"></h2>
+        <p id="vez-jogador" style="font-size: 18px; color: #64b5f6;"></p>
+        <div class="maletas-container" id="maletas-box"></div>
+        <div class="placar" id="placar-text"></div>
+    </div>
+
+    <!-- TELA 5: JULGAMENTO -->
+    <div id="tela-julgamento" class="escondido">
+        <h3>⚔️ Confronto na Posição! ⚔️</h3>
+        <p id="resultado-p1"></p>
+        <p id="resultado-p2"></p>
+        <h4>Quem levou a melhor?</h4>
+        <button id="btn-p1" onclick="votar(1)"></button>
+        <button id="btn-p2" onclick="votar(2)"></button>
+        <button onclick="votar(3)">Empate</button>
+    </div>
+
+    <!-- TELA 6: FIM DE JOGO -->
+    <div id="tela-fim" class="escondido">
+        <h2>🏆 Resultado Final 🏆</h2>
+        <div id="resumo-times"></div>
+        <h3 id="vencedor-final" style="color: #4CAF50;"></h3>
+        <button onclick="location.reload()">Jogar Novamente</button>
+    </div>
+</div>
+
+<script>
+    const BANCO_PADRAO = {
+        "Goleiro": [
+            "sibin", "joao shimmidt", "jvian prime", "guilherme",
+            "Buffon", "Neuer", "Casillas", "Courtois", "Lev Yashin", 
+            "Alisson", "Ederson", "Oblak", "Ter Stegen", "Donnarumma", 
+            "Rogério Ceni", "Cássio", "Marcos", "Dida", "Taffarel", 
+            "Fábio", "Weverton", "Victor", "Emiliano Martínez", "Keylor Navas"
+        ],
+        "Fixo": [
+            "brunelli", "jvian prime", "valente com sua composteira",
+            "Maldini", "Beckenbauer", "Sergio Ramos", "Van Dijk", "Puyol", 
+            "Rúben Dias", "Rüdiger", "Cannavaro", "Thiago Silva", "Baresi", 
+            "Geromel", "Gustavo Gómez", "Kannemann", "Léo Ortiz", "Nino", 
+            "Dedé", "Lugano", "Marquinhos", "Alaba", "Saliba"
+        ],
+        "Ala": [
+            "Roberto Carlos", "Cafu", "Dani Alves", "Philipp Lahm", "Hakimi", 
+            "Kyle Walker", "Alexander-Arnold", "Robertson", "Theo Hernández", "Carvajal", 
+            "Fagner", "Guilherme Arana", "Filipe Luís", "Ayrton Lucas", "Marcos Rocha", 
+            "Rodinei", "Piquerez", "Rafinha", "Marcelo", "Cancelo"
+        ],
+        "Meio-Campo": [
+            "Zidane", "Ronaldinho Gaúcho", "De Bruyne", "Modrić", "Bellingham", 
+            "Iniesta", "Xavi", "Rodri", "Pirlo", "Kroos", 
+            "Arrascaeta", "Everton Ribeiro", "Gerson", "Raphael Veiga", "Ganso", 
+            "Lucas Moura", "Renato Augusto", "Paulinho", "De La Cruz", "Pedri"
+        ],
+        "Pivô": [
+            "luiz guilherme", "pelé(atualmente)", "bolsonaro no jogo beneficiente",
+            "Pelé", "Ronaldo Fenômeno", "Mbappé", "Haaland", "Cristiano Ronaldo", 
+            "Messi", "Thierry Henry", "Lewandowski", "Benzema", "Harry Kane", 
+            "Gabigol", "Pedro", "Hulk", "Endrick", "Calleri", 
+            "Luis Suárez", "Tiquinho Soares", "Germán Cano", "Fred", "Vinícius Jr."
+        ]
+    };
+
+    const posicoes = ["Goleiro", "Fixo", "Ala", "Meio-Campo", "Pivô"];
+    let modoAtual = 1;
+    let p1 = "Jogador 1", p2 = "Jogador 2", mestre = "Mestre";
+    let posIndex = 0;
+    let placarP1 = 0, placarP2 = 0;
+    let timeP1 = {}, timeP2 = {};
+
+    let maletasCustomP1 = { "Goleiro":[], "Fixo":[], "Ala":[], "Meio-Campo":[], "Pivô":[] };
+    let maletasCustomP2 = { "Goleiro":[], "Fixo":[], "Ala":[], "Meio-Campo":[], "Pivô":[] };
+    let maletasCustomMestre = { "Goleiro":[], "Fixo":[], "Ala":[], "Meio-Campo":[], "Pivô":[] };
+
+    let cadEtapa = 0;
+    let cadPosIndex = 0;
+    let cadMaletaCount = 0;
+
+    let maletasRodada = [];
+    let disponiveis = [1, 2, 3, 4, 5];
+    let escolhasTurno = {};
+
+    function esconderTodas() {
+        document.querySelectorAll('.container > div').forEach(div => div.classList.add('escondido'));
+    }
+
+    function iniciarModo(modo) {
+        modoAtual = modo;
+        esconderTodas();
+        document.getElementById('tela-nomes').classList.remove('escondido');
+        const box = document.getElementById('inputs-nomes');
+        
+        if (modo === 3) {
+            box.innerHTML = `
+                <input type="text" id="in-mestre" placeholder="Nome do Mestre (Criador)"><br>
+                <input type="text" id="in-p1" placeholder="Nome do Competidor 1"><br>
+                <input type="text" id="in-p2" placeholder="Nome do Competidor 2">
+            `;
+        } else {
+            box.innerHTML = `
+                <input type="text" id="in-p1" placeholder="Nome do Jogador 1"><br>
+                <input type="text" id="in-p2" placeholder="Nome do Jogador 2">
+            `;
+        }
+    }
+
+    function confirmarNomes() {
+        p1 = document.getElementById('in-p1')?.value || "Jogador 1";
+        p2 = document.getElementById('in-p2')?.value || "Jogador 2";
+        if (modoAtual === 3) mestre = document.getElementById('in-mestre')?.value || "Mestre";
+
+        if (modoAtual === 1) {
+            iniciarPartida();
+        } else {
+            cadEtapa = (modoAtual === 3) ? 3 : 1;
+            cadPosIndex = 0;
+            cadMaletaCount = 0;
+            proximoCadastro();
+        }
+    }
+
+    function alternarVisibilidade() {
+        const field = document.getElementById('input-maleta');
+        field.type = (field.type === 'password') ? 'text' : 'password';
+    }
+
+    function proximoCadastro() {
+        esconderTodas();
+        document.getElementById('tela-cadastro').classList.remove('escondido');
+        
+        let criador = cadEtapa === 1 ? p1 : (cadEtapa === 2 ? p2 : mestre);
+        let alvo = cadEtapa === 1 ? p2 : (cadEtapa === 2 ? p1 : `${p1} e ${p2}`);
+        
+        document.getElementById('instrucao-cadastro').innerText = `🤫 MANDATO DE CRIAÇÃO: ${criador.toUpperCase()}`;
+        document.getElementById('sub-cadastro').innerText = `Cadastre a Maleta ${cadMaletaCount + 1}/5 para a posição ${posicoes[cadPosIndex].toUpperCase()} (para ${alvo})`;
+        
+        const field = document.getElementById('input-maleta');
+        field.type = 'password';
+        field.value = '';
+        field.focus();
+    }
+
+    function salvarMaletaCustom() {
+        const val = document.getElementById('input-maleta').value.trim();
+        if (!val) return alert("Digite o nome do jogador!");
+
+        const pos = posicoes[cadPosIndex];
+        if (cadEtapa === 1) maletasCustomP2[pos].push(val);
+        else if (cadEtapa === 2) maletasCustomP1[pos].push(val);
+        else if (cadEtapa === 3) maletasCustomMestre[pos].push(val);
+
+        cadMaletaCount++;
+        if (cadMaletaCount === 5) {
+            cadMaletaCount = 0;
+            cadPosIndex++;
+            if (cadPosIndex === 5) {
+                cadPosIndex = 0;
+                if (cadEtapa === 1) { 
+                    cadEtapa = 2; 
+                } else { 
+                    iniciarPartida(); 
+                    return; 
+                }
+            }
+        }
+        proximoCadastro();
+    }
+
+    function iniciarPartida() {
+        posIndex = 0;
+        placarP1 = 0;
+        placarP2 = 0;
+        iniciarRodada();
+    }
+
+    function aplicarVersao(nome) {
+        if (Math.random() < 0.5) return `${nome} (Atual)`;
+        return `${nome} (No Auge)`;
+    }
+
+    function iniciarRodada() {
+        esconderTodas();
+        document.getElementById('tela-jogo').classList.remove('escondido');
+        
+        const pos = posicoes[posIndex];
+        document.getElementById('posicao-atual').innerText = `POSIÇÃO: ${pos.toUpperCase()}`;
+        document.getElementById('placar-text').innerText = `Placar: ${p1} ${placarP1} x ${placarP2} ${p2}`;
+
+        disponiveis = [1, 2, 3, 4, 5];
+        escolhasTurno = {};
+
+        if (modoAtual === 1) {
+            let embaralhado = [...BANCO_PADRAO[pos]].sort(() => Math.random() - 0.5).slice(0, 5);
+            maletasRodada = embaralhado.map(aplicarVersao);
+        } else if (modoAtual === 2) {
+            let m1 = [...maletasCustomP1[pos]].sort(() => Math.random() - 0.5).map(aplicarVersao);
+            let m2 = [...maletasCustomP2[pos]].sort(() => Math.random() - 0.5).map(aplicarVersao);
+            maletasRodada = { p1: m1, p2: m2 };
+        } else if (modoAtual === 3) {
+            let mM = [...maletasCustomMestre[pos]].sort(() => Math.random() - 0.5).map(aplicarVersao);
+            maletasRodada = mM;
+        }
+
+        atualizarVez();
+    }
+
+    function atualizarVez() {
+        const pPrimeiro = (posIndex % 2 === 0) ? p1 : p2;
+        const pSegundo = (posIndex % 2 === 0) ? p2 : p1;
+
+        if (!escolhasTurno.primeiro) {
+            document.getElementById('vez-jogador').innerText = `${pPrimeiro}, escolha uma maleta!`;
+        } else {
+            document.getElementById('vez-jogador').innerText = `${pSegundo}, escolha uma maleta!`;
+        }
+
+        const box = document.getElementById('maletas-box');
+        box.innerHTML = '';
+        disponiveis.forEach(num => {
+            const btn = document.createElement('div');
+            btn.className = 'maleta';
+            btn.innerText = num;
+            btn.onclick = () => escolherMaleta(num);
+            box.appendChild(btn);
+        });
+    }
+
+    function escolherMaleta(num) {
+        const pPrimeiro = (posIndex % 2 === 0) ? p1 : p2;
+        const pSegundo = (posIndex % 2 === 0) ? p2 : p1;
+
+        if (!escolhasTurno.primeiro) {
+            escolhasTurno.primeiro = num;
+            if (modoAtual === 2) {
+                escolhasTurno.craque1 = (pPrimeiro === p1) ? maletasRodada.p1[num - 1] : maletasRodada.p2[num - 1];
+            } else {
+                escolhasTurno.craque1 = maletasRodada[num - 1];
+            }
+            
+            disponiveis = disponiveis.filter(n => n !== num);
+            atualizarVez();
+        } else {
+            escolhasTurno.segundo = num;
+            if (modoAtual === 2) {
+                escolhasTurno.craque2 = (pSegundo === p1) ? maletasRodada.p1[num - 1] : maletasRodada.p2[num - 1];
+            } else {
+                escolhasTurno.craque2 = maletasRodada[num - 1];
+            }
+
+            if (pPrimeiro === p1) {
+                timeP1[posicoes[posIndex]] = escolhasTurno.craque1;
+                timeP2[posicoes[posIndex]] = escolhasTurno.craque2;
+            } else {
+                timeP1[posicoes[posIndex]] = escolhasTurno.craque2;
+                timeP2[posicoes[posIndex]] = escolhasTurno.craque1;
+            }
+
+            abrirJulgamento();
+        }
+    }
+
+    function abrirJulgamento() {
+        esconderTodas();
+        document.getElementById('tela-julgamento').classList.remove('escondido');
+        const pos = posicoes[posIndex];
+
+        document.getElementById('resultado-p1').innerText = `${p1} tirou: ${timeP1[pos]}`;
+        document.getElementById('resultado-p2').innerText = `${p2} tirou: ${timeP2[pos]}`;
+
+        document.getElementById('btn-p1').innerText = `Ponto para ${p1}`;
+        document.getElementById('btn-p2').innerText = `Ponto para ${p2}`;
+    }
+
+    function votar(opcao) {
+        if (opcao === 1) placarP1++;
+        if (opcao === 2) placarP2++;
+
+        posIndex++;
+        if (posIndex < 5) {
+            iniciarRodada();
+        } else {
+            exibirFim();
+        }
+    }
+
+    function exibirFim() {
+        esconderTodas();
+        document.getElementById('tela-fim').classList.remove('escondido');
+        
+        let html = `<h4>Time de ${p1}:</h4><ul>`;
+        posicoes.forEach(p => html += `<li><b>${p}:</b> ${timeP1[p]}</li>`);
+        html += `</ul><h4>Time de ${p2}:</h4><ul>`;
+        posicoes.forEach(p => html += `<li><b>${p}:</b> ${timeP2[p]}</li>`);
+        html += `</ul>`;
+
+        document.getElementById('resumo-times').innerHTML = html;
+
+        let res = `Placar Final: ${p1} ${placarP1} x ${placarP2} ${p2}<br>`;
+        if (placarP1 > placarP2) res += `🎉 ${p1} é o Vencedor!`;
+        else if (placarP2 > placarP1) res += `🎉 ${p2} é o Vencedor!`;
+        else res += "🤝 Empate!";
+
+        document.getElementById('vencedor-final').innerHTML = res;
+    }
+</script>
+
+</body>
+</html>
